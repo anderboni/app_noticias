@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}App Notícias{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div id="loading-bar" class="loading-bar" aria-hidden="true" role="progressbar" aria-valuetext="Carregando">
+    <div class="loading-bar__track"></div>
+    <div class="loading-bar__fill"></div>
+  </div>
+
+  <div class="container">
+    <header class="topbar">
+      <div class="brand">App <span>Notícias</span></div>
+      <nav>
+        <a href="{{ url_for('main.index') }}" class="{% if request.endpoint == 'main.index' %}active{% endif %}">Painel</a>
+        <a href="{{ url_for('main.noticias') }}" class="{% if request.endpoint == 'main.noticias' %}active{% endif %}">Notícias</a>
+        <a href="{{ url_for('main.configuracoes') }}" class="{% if request.endpoint in ('main.configuracoes', 'main.test_email') %}active{% endif %}">Configurações</a>
+      </nav>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+
+    <div class="disclaimer">
+      Os resumos vêm de feeds públicos (Google Notícias) e trazem um trecho com o link da matéria.
+      O sistema não copia o texto integral nem contorna paywall ou login.
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/loading.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

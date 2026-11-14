@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Configurações · App Notícias{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <h2>Assuntos</h2>
+  <p class="muted">
+    Cada assunto vira uma busca. Se os termos ficarem em branco, o sistema usa o nome.
+    Dá para ter um ou vários, e pausar sem apagar o histórico.
+  </p>
+
+  <form method="post" class="form-row">
+    <input type="hidden" name="action" value="add_topic">
+    <input type="text" name="name" placeholder="Nome do assunto" required maxlength="120" style="min-width:200px;">
+    <input type="text" name="query" placeholder="Termos de busca (opcional)" maxlength="400" style="flex:1;min-width:220px;">
+    <button class="btn" type="submit">Adicionar assunto</button>
+  </form>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th colspan="2">Assunto e termos de busca</th>
+          <th>Notícias</th>
+          <th>Estado</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for topic in topics %}
+        <tr>
+          <td colspan="2">
+            <form method="post" class="form-row" style="margin:0;">
+              <input type="hidden" name="action" value="edit_topic">
+              <input type="hidden" name="topic_id" value="{{ topic.id }}">
+              <input type="text" name="name" value="{{ topic.name }}" required maxlength="120" style="min-width:180px;">
+              <input type="text" name="query" value="{{ topic.search_query or '' }}" maxlength="400" placeholder="usa o nome" style="min-width:200px;">
+              <button class="btn btn-secondary" type="submit">Salvar</button>
+            </form>
+          </td>
+          <td>{{ topic.news_count }}</td>
+          <td>
+            {% if topic.active %}
+              <span class="badge badge-buy">ativo</span>
+            {% else %}
+              <span class="badge badge-neutral">pausado</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="form-row" style="margin:0;gap:0.4rem;">
+              <form method="post" style="margin:0;">
+                <input type="hidden" name="action" value="toggle_topic">
+                <input type="hidden" name="topic_id" value="{{ topic.id }}">
+                <button class="btn btn-secondary" type="submit">{{ "Pausar" if topic.active else "Ativar" }}</button>
+              </form>
+              <form method="post" style="margin:0;" onsubmit="return confirm('Excluir este assunto e as notícias dele?');">
+                <input type="hidden" name="action" value="delete_topic">
+                <input type="hidden" name="topic_id" value="{{ topic.id }}">
+                <button class="btn btn-secondary" type="submit">Excluir</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted">Nenhum assunto cadastrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Horários da coleta</h2>
+  <p class="muted">
+    Horário de Brasília. Em cada horário ativo o sistema busca os assuntos e envia o resumo
+    se houver notícia relevante ainda não enviada.
+  </p>
+
+  <form method="post" class="form-row">
+    <input type="hidden" name="action" value="add_schedule">
+    <label class="muted" for="run_time">Novo horário</label>
+    <input type="time" id="run_time" name="run_time" required value="08:00">
+    <button class="btn" type="submit">Adicionar horário</button>
+  </form>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Horário</th>
+          <th>Estado</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for slot in slots %}
+        <tr>
+          <td><strong>{{ slot.label }}</strong></td>
+          <td>
+            {% if slot.active %}
+              <span class="badge badge-buy">ativo</span>
+            {% else %}
+              <span class="badge badge-neutral">pausado</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="form-row" style="margin:0;gap:0.4rem;">
+              <form method="post" style="margin:0;">
+                <input type="hidden" name="action" value="toggle_schedule">
+                <input type="hidden" name="slot_id" value="{{ slot.id }}">
+                <button class="btn btn-secondary" type="submit">{{ "Pausar" if slot.active else "Ativar" }}</button>
+              </form>
+              <form method="post" style="margin:0;" onsubmit="return confirm('Remover este horário?');">
+                <input type="hidden" name="action" value="delete_schedule">
+                <input type="hidden" name="slot_id" value="{{ slot.id }}">
+                <button class="btn btn-secondary" type="submit">Excluir</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" class="muted">Nenhum horário. A coleta automática fica parada até você adicionar um.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>O que entra no resumo</h2>
+  <p class="muted">
+    Notícias abaixo da relevância mínima continuam na página, mas não vão no e-mail.
+    0,40 equivale a 40%.
+  </p>
+  <form method="post">
+    <input type="hidden" name="action" value="save_prefs">
+    <div class="config-grid">
+      <label class="muted">Máximo por assunto
+        <input type="number" name="max_items_per_topic" min="1" max="20" value="{{ prefs.max_items_per_topic }}" required>
+      </label>
+      <label class="muted">Relevância mínima (0 a 1)
+        <input type="number" name="min_relevance" min="0" max="1" step="0.05" value="{{ '%.2f'|format(prefs.min_relevance) }}" required>
+      </label>
+      <label class="muted">Janela (horas)
+        <input type="number" name="lookback_hours" min="1" max="168" value="{{ prefs.lookback_hours }}" required>
+      </label>
+      <label class="check-label">
+        <input type="checkbox" name="weekdays_only" {% if prefs.weekdays_only %}checked{% endif %}>
+        Rodar só em dias úteis (seg–sex)
+      </label>
+    </div>
+    <div class="form-row" style="margin-top:1rem;">
+      <button class="btn" type="submit">Salvar preferências</button>
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>E-mails do resumo</h2>
+  <p class="muted">
+    O resumo é enviado para todos os endereços abaixo.
+    O servidor SMTP continua no arquivo <code>.env</code>
+    (agora: {{ "ativado" if mail_enabled else "desativado" }}).
+  </p>
+
+  <form method="post" class="form-row">
+    <input type="hidden" name="action" value="add_email">
+    <input type="email" name="email" placeholder="novo@email.com" required style="min-width:240px;">
+    <button class="btn" type="submit">Adicionar e-mail</button>
+  </form>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>E-mail</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for recipient in recipients %}
+        <tr>
+          <td>
+            <form method="post" class="form-row" style="margin:0;">
+              <input type="hidden" name="action" value="edit_email">
+              <input type="hidden" name="recipient_id" value="{{ recipient.id }}">
+              <input type="email" name="email" value="{{ recipient.email }}" required style="min-width:240px;">
+              <button class="btn btn-secondary" type="submit">Salvar</button>
+            </form>
+          </td>
+          <td>
+            <form method="post" style="margin:0;" onsubmit="return confirm('Remover este e-mail?');">
+              <input type="hidden" name="action" value="delete_email">
+              <input type="hidden" name="recipient_id" value="{{ recipient.id }}">
+              <button class="btn btn-secondary" type="submit">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="2" class="muted">Nenhum destinatário. A coleta guarda as notícias, mas não envia e-mail.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <form method="post" action="{{ url_for('main.test_email') }}" style="margin-top:1rem;">
+    <button class="btn btn-secondary" type="submit">Enviar e-mail de teste</button>
+  </form>
+</section>
+{% endblock %}

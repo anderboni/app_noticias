@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Painel · App Notícias{% endblock %}
+
+{% block content %}
+<section class="actions">
+  <form action="{{ url_for('main.coletar') }}" method="post">
+    <button class="btn" type="submit">Coletar e enviar resumo agora</button>
+  </form>
+  <span class="muted">
+    Última coleta:
+    {% if settings.last_run_at %}{{ settings.last_run_at|brasilia }}{% else %}—{% endif %}
+    · Próxima:
+    {% if next_run %}{{ next_run|brasilia('%d/%m %H:%M') }}{% else %}nenhum horário ativo{% endif %}
+    · E-mail: {{ "ativado" if mail_enabled else "desativado no .env" }}
+  </span>
+</section>
+
+<div class="grid">
+  <div class="stat">
+    <div class="label">Assuntos ativos</div>
+    <div class="value">{{ active_topics }}</div>
+  </div>
+  <div class="stat">
+    <div class="label">Horários</div>
+    <div class="value">{{ slots|selectattr('active')|list|length }}</div>
+    <div class="muted" style="margin-top:0.35rem;font-size:0.85rem;">
+      {% if weekdays_only %}Somente dias úteis{% else %}Todos os dias{% endif %}
+    </div>
+  </div>
+  <div class="stat">
+    <div class="label">Destinatários</div>
+    <div class="value">{{ recipient_count }}</div>
+  </div>
+  <div class="stat">
+    <div class="label">Última execução</div>
+    <div class="value">{% if last_run %}{{ last_run.status }}{% else %}—{% endif %}</div>
+    <div class="muted" style="margin-top:0.35rem;font-size:0.85rem;">
+      {% if last_run and last_run.message %}{{ last_run.message }}{% else %}Nenhuma coleta ainda{% endif %}
+    </div>
+  </div>
+</div>
+
+<section class="panel">
+  <h2>Notícias relevantes recentes</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Quando</th>
+          <th>Assunto</th>
+          <th>Notícia</th>
+          <th>Relevância</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for article in recent %}
+        <tr>
+          <td class="muted">{{ article.published_at|brasilia('%d/%m %H:%M') }}</td>
+          <td>{{ article.topic.name if article.topic else "—" }}</td>
+          <td>
+            <a class="news-title" href="{{ article.url }}" target="_blank" rel="noopener">{{ article.title }}</a>
+            {% if article.summary %}
+              <div class="summary-cell">{{ article.summary }}</div>
+            {% endif %}
+          </td>
+          <td>{{ "%.0f"|format((article.relevance or 0) * 100) }}%</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="muted">
+            Nenhuma notícia relevante ainda.
+            {% if active_topics == 0 %}
+              Cadastre um assunto em <a href="{{ url_for('main.configuracoes') }}">Configurações</a>.
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Coletas</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Quando</th>
+          <th>Status</th>
+          <th>Novas</th>
+          <th>No e-mail</th>
+          <th>Mensagem</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for run in runs %}
+        <tr>
+          <td class="muted">{{ run.started_at|brasilia('%d/%m %H:%M') }}</td>
+          <td>
+            {% if run.status == 'ok' %}
+              <span class="badge badge-buy">ok</span>
+            {% elif run.status == 'empty' %}
+              <span class="badge badge-neutral">vazio</span>
+            {% elif run.status == 'error' %}
+              <span class="badge badge-sell">erro</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ run.status }}</span>
+            {% endif %}
+          </td>
+          <td>{{ run.news_found or 0 }}</td>
+          <td>{{ run.news_selected or 0 }}</td>
+          <td class="summary-cell">{{ run.message or "—" }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted">Nenhuma coleta registrada.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Notícias · App Notícias{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="actions" style="margin-bottom:0.6rem;">
+    <h2 style="margin:0;">Notícias coletadas</h2>
+    <form action="{{ url_for('main.coletar') }}" method="post">
+      <input type="hidden" name="next" value="{{ url_for('main.noticias') }}">
+      <button class="btn" type="submit">Coletar agora</button>
+    </form>
+  </div>
+  <p class="muted">As notícias ficam aqui mesmo quando já foram incluídas no resumo por e-mail.</p>
+
+  <div class="form-row">
+    <form method="get" class="form-row" style="margin:0;">
+      <label class="muted" for="assunto">Assunto</label>
+      <select id="assunto" name="assunto" onchange="this.form.submit()">
+        <option value="">Todos</option>
+        {% for topic in topics %}
+          <option value="{{ topic.id }}" {% if current_topic and current_topic.id == topic.id %}selected{% endif %}>
+            {{ topic.name }}{% if not topic.active %} (pausado){% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </form>
+    <input
+      type="search"
+      id="news-search"
+      placeholder="Buscar por título, fonte ou resumo"
+      style="flex:1;min-width:220px;max-width:420px;"
+      autocomplete="off"
+    >
+    <span class="muted" id="news-search-count"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table id="news-table">
+      <thead>
+        <tr>
+          <th>Quando</th>
+          <th>Assunto</th>
+          <th>Notícia</th>
+          <th>Relevância</th>
+          <th>E-mail</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for article in articles %}
+        <tr class="news-row" data-search="{{ ((article.topic.name if article.topic else '') ~ ' ' ~ (article.source or '') ~ ' ' ~ (article.title or '') ~ ' ' ~ (article.summary or ''))|lower }}">
+          <td class="muted">{{ article.published_at|brasilia('%d/%m %H:%M') }}</td>
+          <td>{{ article.topic.name if article.topic else "—" }}</td>
+          <td>
+            <a class="news-title" href="{{ article.url }}" target="_blank" rel="noopener">{{ article.title }}</a>
+            {% if article.source %}<div class="muted">{{ article.source }}</div>{% endif %}
+            {% if article.summary %}<div class="summary-cell">{{ article.summary }}</div>{% endif %}
+          </td>
+          <td>{{ "%.0f"|format((article.relevance or 0) * 100) }}%</td>
+          <td>
+            {% if article.emailed_at %}
+              <span class="badge badge-buy">enviada</span>
+            {% elif article.selected %}
+              <span class="badge badge-stock">relevante</span>
+            {% else %}
+              <span class="badge badge-neutral">coletada</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr id="news-empty-default"><td colspan="5" class="muted">Nenhuma notícia ainda. Rode uma coleta.</td></tr>
+        {% endfor %}
+        <tr id="news-empty-filter" hidden>
+          <td colspan="5" class="muted">Nenhuma notícia corresponde à busca.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const input = document.getElementById("news-search");
+  const rows = Array.from(document.querySelectorAll(".news-row"));
+  const emptyFilter = document.getElementById("news-empty-filter");
+  const countEl = document.getElementById("news-search-count");
+  if (!input || !rows.length) return;
+
+  function applyFilter() {
+    const q = (input.value || "").trim().toLowerCase();
+    let visible = 0;
+    rows.forEach(function (row) {
+      const hay = row.getAttribute("data-search") || "";
+      const show = !q || hay.indexOf(q) !== -1;
+      row.hidden = !show;
+      if (show) visible += 1;
+    });
+    if (emptyFilter) emptyFilter.hidden = visible > 0 || !q;
+    if (countEl) {
+      countEl.textContent = q
+        ? visible + " de " + rows.length
+        : rows.length + " notícias";
+    }
+  }
+
+  input.addEventListener("input", applyFilter);
+  applyFilter();
+})();
+</script>
+{% endblock %}
