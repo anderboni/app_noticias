@@ -413,6 +413,58 @@ select {
   font-size: 0.85rem;
 }
 
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(120px, 1.6fr) 3rem;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.bar-copy {
+  min-width: 0;
+}
+
+.bar-copy .news-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bar-meta {
+  margin-top: 0.15rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.bar-track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  min-width: 4px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+}
+
+.bar-value {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  text-align: right;
+  color: var(--text);
+}
+
 @media (max-width: 640px) {
   .container {
     padding: 1rem;
@@ -420,5 +472,24 @@ select {
 
   .brand {
     font-size: 1.1rem;
+  }
+
+  .bar-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "copy value"
+      "track track";
+  }
+
+  .bar-copy {
+    grid-area: copy;
+  }
+
+  .bar-value {
+    grid-area: value;
+  }
+
+  .bar-track {
+    grid-area: track;
   }
 }

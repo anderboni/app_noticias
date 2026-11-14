@@ -37,6 +37,8 @@ def index():
     topics = list_topics()
     slots = list_slots()
     last_run = DigestRun.query.order_by(DigestRun.started_at.desc()).first()
+    from app.services.news_collector import top_news_for_chart
+
     recent = (
         NewsArticle.query.options(joinedload(NewsArticle.topic))
         .filter(NewsArticle.selected.is_(True))
@@ -44,6 +46,7 @@ def index():
         .limit(8)
         .all()
     )
+    chart_bars = top_news_for_chart([topic.id for topic in topics])
     runs = DigestRun.query.order_by(DigestRun.started_at.desc()).limit(6).all()
     return render_template(
         "index.html",
@@ -55,6 +58,7 @@ def index():
         recipient_count=len(get_recipient_emails()),
         last_run=last_run,
         recent=recent,
+        chart_bars=chart_bars,
         runs=runs,
         mail_enabled=current_app.config.get("MAIL_ENABLED"),
         settings=settings,

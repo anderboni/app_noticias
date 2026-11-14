@@ -16,6 +16,7 @@ import feedparser
 import requests
 from bs4 import BeautifulSoup
 from flask import current_app
+from sqlalchemy.orm import joinedload
 
 from app import db
 from app.models import NewsArticle, Topic, utcnow
@@ -338,6 +339,62 @@ def collect_all_topics(topics: list[Topic], *, min_relevance: float, lookback_ho
         db.session.commit()
     logger.info("Coleta: novas=%s selecionadas=%s erros=%s", found, selected, len(errors))
     return {"found": found, "selected": selected, "errors": errors}
+
+
+def top_news_for_chart(topic_ids: list[int], limit: int = 8) -> list[dict]:
+    """Notícias mais relevantes entre os assuntos configurados.
+
+    A mesma manchete encontrada em mais de um assunto sobe na ordem.
+    A largura da barra é a maior relevância (0–100).
+    """
+    if not topic_ids:
+        return []
+
+    articles = (
+        NewsArticle.query.options(joinedload(NewsArticle.topic))
+        .filter(NewsArticle.topic_id.in_(topic_ids))
+        .all()
+    )
+    selected = [article for article in articles if article.selected]
+    pool = selected or articles
+
+    groups: dict[str, dict] = {}
+    for article in pool:
+        key = fold(article.title)
+        relevance = float(article.relevance or 0)
+        group = groups.get(key)
+        if group is None:
+            group = {
+                "title": article.title,
+                "url": article.url,
+                "topics": [],
+                "relevance": relevance,
+                "appearances": 0,
+            }
+            groups[key] = group
+        group["appearances"] += 1
+        if relevance >= group["relevance"]:
+            group["relevance"] = relevance
+            group["title"] = article.title
+            group["url"] = article.url
+        topic_name = article.topic.name if article.topic else ""
+        if topic_name and topic_name not in group["topics"]:
+            group["topics"].append(topic_name)
+
+    ranked = sorted(
+        groups.values(),
+        key=lambda item: (
+            item["relevance"] + min(0.2, 0.08 * (item["appearances"] - 1)),
+            item["appearances"],
+            item["relevance"],
+        ),
+        reverse=True,
+    )[:limit]
+
+    for item in ranked:
+        item["percent"] = int(round(min(1.0, item["relevance"]) * 100))
+        item["topics_label"] = ", ".join(item["topics"])
+    return ranked
 
 
 def pending_digest_articles(topic: Topic, *, limit: int, lookback_hours: int) -> list[NewsArticle]:

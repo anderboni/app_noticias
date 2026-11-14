@@ -41,6 +41,34 @@
 </div>
 
 <section class="panel">
+  <h2>Notícias que mais aparecem</h2>
+  <p class="muted">Entre os assuntos cadastrados em Configurações. A barra é a relevância; se a mesma notícia surgir em mais de uma busca, isso aparece ao lado.</p>
+  {% if chart_bars %}
+  <div class="bar-chart" role="list">
+    {% for bar in chart_bars %}
+    <div class="bar-row" role="listitem">
+      <div class="bar-copy">
+        <a class="news-title" href="{{ bar.url }}" target="_blank" rel="noopener">{{ bar.title }}</a>
+        <div class="bar-meta">{{ bar.topics_label }}{% if bar.appearances > 1 %} · {{ bar.appearances }} buscas{% endif %}</div>
+      </div>
+      <div class="bar-track" role="img" aria-label="{{ bar.title }}: {{ bar.percent }}% de relevância">
+        <div class="bar-fill" style="width: {{ bar.percent }}%;"></div>
+      </div>
+      <div class="bar-value">{{ bar.percent }}%</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted" style="margin:0;">
+    Nenhuma notícia coletada para os assuntos configurados.
+    {% if active_topics == 0 %}
+      Cadastre um assunto em <a href="{{ url_for('main.configuracoes') }}">Configurações</a>.
+    {% endif %}
+  </p>
+  {% endif %}
+</section>
+
+<section class="panel">
   <h2>Notícias relevantes recentes</h2>
   <div class="table-wrap">
     <table>
