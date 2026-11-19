@@ -397,6 +397,24 @@ select {
   max-width: 36rem;
 }
 
+.help-notes {
+  margin: 0 0 1rem;
+  padding-left: 1.15rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.help-notes li + li {
+  margin-top: 0.35rem;
+}
+
+.help-notes code {
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+}
+
 .disclaimer {
   margin-top: 2rem;
   padding: 1rem;

@@ -4,10 +4,13 @@
 {% block content %}
 <section class="panel">
   <h2>Assuntos</h2>
-  <p class="muted">
-    Cada assunto vira uma busca. Se os termos ficarem em branco, o sistema usa o nome.
-    Dá para ter um ou vários, e pausar sem apagar o histórico.
-  </p>
+  <p class="muted">Cada assunto vira uma busca. Dá para ter um ou vários, e pausar sem apagar o histórico.</p>
+  <ul class="help-notes">
+    <li>Termos em branco: a busca usa o nome do assunto.</li>
+    <li>Termos preenchidos: o Google recebe só esse texto. O nome não entra na consulta, mas continua valendo na relevância.</li>
+    <li><code>OR</code> separa alternativas (<code>ChatGPT OR OpenAI</code>). <code>AND</code> pede as duas palavras; um espaço entre elas faz o mesmo.</li>
+    <li>Maiúsculas e minúsculas não alteram a busca nem a nota.</li>
+  </ul>
 
   <form method="post" class="form-row">
     <input type="hidden" name="action" value="add_topic">
@@ -128,10 +131,13 @@
 
 <section class="panel">
   <h2>O que entra no resumo</h2>
-  <p class="muted">
-    Notícias abaixo da relevância mínima continuam na página, mas não vão no e-mail.
-    0,40 equivale a 40%.
-  </p>
+  <p class="muted">A nota vai de 0 a 1 (0,40 equivale a 40%).</p>
+  <ul class="help-notes">
+    <li>Entra no e-mail quem fica igual ou acima da relevância mínima, até o máximo por assunto, se ainda não foi enviada e foi coletada dentro da janela.</li>
+    <li>Abaixo do mínimo, a notícia continua na página e não vai no resumo.</li>
+    <li>A frase inteira do nome no título parte de 0,82. Sem essa frase, a nota parte de 0,28 e sobe com cada palavra do nome ou dos termos encontrada no título. Um único termo de busca pode bastar.</li>
+    <li>A janela é o prazo, em horas, para a notícia ainda ir no e-mail. O Google recebe isso em dias inteiros. Depois do prazo, ela permanece na página.</li>
+  </ul>
   <form method="post">
     <input type="hidden" name="action" value="save_prefs">
     <div class="config-grid">
